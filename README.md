@@ -43,11 +43,17 @@ HOST_DEVICE_ID=<UUID_DEL_ANFITRIÓN>
 PORT=3001  
 CORS_ORIGINS=http://localhost:3000,http://<TU_IP_LOCAL>:3000  
 ```  
-- **Generar `HOST_DEVICE_ID`**: Este ID identifica al anfitrión. Ejecútalo en una terminal:  
-  ```bash  
-  node -e "console.log(crypto.randomUUID())"  
-  ```  
-  Copia el resultado en `HOST_DEVICE_ID`.  
+- **Generar `HOST_DEVICE_ID`**: Este ID identifica al anfitrión. 
+1. Abre tu aplicación front en el navegador (ej. http://localhost:3000).
+2. Abre la consola de desarrollador (F12 o Ctrl+Shift+I).
+3. Ejecuta:
+
+```js
+localStorage.getItem('chat_device_id') || localStorage.setItem('chat_device_id', crypto.randomUUID()) || localStorage.getItem('chat_device_id');
+```
+
+4. Copia el valor que retorna (`chat_device_id`) y pégalo en `HOST_DEVICE_ID` de tu `.env` del backend.  
+
 - **`<TU_IP_LOCAL>`**: Reemplaza con tu IP local (ej. `192.168.1.100`).  
   - **Windows**: `ipconfig | findstr /R "IPv4"`  
   - **Linux/macOS**: `ifconfig | grep -E "inet (192\.168|10\.)"`  
