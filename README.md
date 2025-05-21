@@ -65,7 +65,7 @@ CORS_ORIGINS=http://localhost:3000,http://<TU_IP_LOCAL>:3000
 localStorage.getItem('chat_device_id') || localStorage.setItem('chat_device_id', crypto.randomUUID()) || localStorage.getItem('chat_device_id');
 ```
 
-4. Copia el valor que retorna (`chat_device_id`) y pégalo en `HOST_DEVICE_ID` de tu `.env` del backend.  
+4. Copia el valor que retorna (`chat_device_id`) y pégalo en `HOST_DEVICE_ID` de tu `.env` del backend y del frontend.  
 
 - **`<TU_IP_LOCAL>`**: Reemplaza con tu IP local (ej. `192.168.1.100`).  
   - **Windows**: `ipconfig | findstr /R "IPv4"`  
@@ -77,7 +77,7 @@ Crea un archivo `client/.env` con:
 REACT_APP_SERVER_URL=http://<TU_IP_LOCAL>:3001
 HOST_DEVICE_ID=<UUID_DEL_ANFITRIÓN>
 ```  
-- Usa la misma IP local que en el backend.  
+- Usa la misma IP local que en el backend, ademas de la misma HOST_DEVICE_ID .  
 
 ### 4. **Ejecutar la Aplicación**  
 Inicia ambos servidores para que el chat funcione.  
