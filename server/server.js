@@ -13,14 +13,14 @@ const {
   deleteRoom,
   removeEmptyRooms,
   isDeviceConnected,
+  isIpConnectedInRoom,
   getActiveRooms,
 } = require('./controllers/roomManager');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const HOST_DEVICE_ID = process.env.HOST_DEVICE_ID; // debe definirse en .env
+const HOST_DEVICE_ID = process.env.HOST_DEVICE_ID;
 
-// --- CORS ---
 const allowedOrigins = (process.env.CORS_ORIGINS || '')
   .split(',').map(o => o.trim()).filter(Boolean);
 
@@ -33,7 +33,6 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// --- HTTP + Socket.IO ---
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -46,101 +45,95 @@ const io = new Server(server, {
 });
 
 io.on('connection', socket => {
-  const clientIp = (socket.handshake.headers['x-forwarded-for']?.split(',')[0] || socket.handshake.address)
-    .replace('::ffff:', '');
+  const clientIp = (socket.handshake.headers['x-forwarded-for']?.split(',')[0]
+                    || socket.handshake.address).replace('::ffff:', '');
   const deviceId = socket.handshake.query.deviceId;
   const isHost = deviceId === HOST_DEVICE_ID;
 
-  // Informar info de red y rol al cliente
   dns.reverse(clientIp, (err, hostnames) => {
     const hostname = err ? clientIp : hostnames[0];
     socket.emit('host_info', { ip: clientIp, hostname });
     socket.emit('host_status', { isHost });
-    // <-- Aquí cambiamos a mostrar la IP en lugar del deviceId
     console.log(`🔌 Conexión: socketId=${socket.id}, ip=${clientIp}, isHost=${isHost}`);
   });
 
-  // Listar salas activas + rol
   socket.on('get_rooms', (_, cb) => {
-    const rooms = getActiveRooms();
     console.log(`📋 get_rooms solicitado por ip=${clientIp}, isHost=${isHost}`);
-    cb({ success: true, rooms, isHost });
+    cb({ success: true, rooms: getActiveRooms(), isHost });
   });
 
-  // Crear sala (solo anfitrión)
   socket.on('create_room', ({ nickname, limit }, cb) => {
     if (!isHost) {
-      console.log(`❌ Intento de create_room sin permiso ip=${clientIp}`);
+      console.log(`❌ create_room no autorizado ip=${clientIp}`);
       return cb({ success: false, message: 'No autorizado' });
     }
     if (!nickname || !limit) {
-      console.log(`❌ create_room parámetros faltantes por host ip=${clientIp}`);
+      console.log(`❌ create_room faltan parámetros ip=${clientIp}`);
       return cb({ success: false, message: 'Faltan parámetros' });
     }
     const room = createRoom(nickname, limit, null, deviceId);
-    console.log(`🏠 Sala creada: PIN=${room.pin}, limit=${room.limit}, hostIp=${clientIp}`);
+    console.log(`🏠 Sala creada: PIN=${room.pin}, hostIp=${clientIp}`);
     cb({ success: true, pin: room.pin });
   });
 
-  // Unirse a sala
   socket.on('join_room', ({ pin, nickname }, cb) => {
-  console.log(`🔑 join_room: nickname=${nickname}, pin=${pin}, ip=${clientIp}`);
+    console.log(`🔑 join_room: nickname=${nickname}, pin=${pin}, ip=${clientIp}`);
 
-  // ✅ Validar primero si ya está en otra sala
-  if (isDeviceConnected(deviceId)) {
-    console.log(`❌ Dispositivo ya en sala: ip=${clientIp}, nickname=${nickname}`);
-    return cb({ success: false, message: 'Ya estás en una sala' });
-  }
+    // Validar: no en otra sala
+    if (isDeviceConnected(deviceId)) {
+      console.log(`❌ Ya en otra sala: deviceId=${deviceId}`);
+      return cb({ success: false, message: 'Ya estás en una sala' });
+    }
 
-  const room = getRoomByPin(pin);
-  if (!room) {
-    console.log(`❌ PIN inválido: ${pin} (nickname=${nickname})`);
-    return cb({ success: false, message: 'PIN inválido' });
-  }
+    const room = getRoomByPin(pin);
+    if (!room) {
+      console.log(`❌ PIN inválido: ${pin}`);
+      return cb({ success: false, message: 'PIN inválido' });
+    }
 
-  if (room.users.length >= room.limit) {
-    console.log(`❌ Sala llena: PIN=${pin}, nickname=${nickname}`);
-    return cb({ success: false, message: 'Sala llena' });
-  }
+    // NUEVO: validar que la IP no esté ya en esta sala
+    if (isIpConnectedInRoom(pin, clientIp)) {
+      console.log(`❌ IP ya unida en esta sala: ip=${clientIp}, pin=${pin}`);
+      return cb({ success: false, message: 'Desde esta IP ya estás en la sala' });
+    }
 
-  joinRoom(pin, nickname, socket.id, deviceId);
-  socket.join(pin);
-  socket.data = { pin, deviceId, nickname };
-  console.log(`✅ Usuario unido: nickname=${nickname}, pin=${pin}, ip=${clientIp}`);
+    if (room.users.length >= room.limit) {
+      console.log(`❌ Sala llena: PIN=${pin}`);
+      return cb({ success: false, message: 'Sala llena' });
+    }
 
-  const updated = getRoomByPin(pin);
-  io.to(pin).emit('room_data', { users: updated.users, limit: updated.limit });
-  cb({ success: true });
-});
+    joinRoom(pin, nickname, socket.id, deviceId, clientIp);
+    socket.join(pin);
+    socket.data = { pin, deviceId, nickname, ip: clientIp };
+    console.log(`✅ Usuario unido: nickname=${nickname}, pin=${pin}, ip=${clientIp}`);
 
+    const updated = getRoomByPin(pin);
+    io.to(pin).emit('room_data', { users: updated.users, limit: updated.limit });
+    cb({ success: true });
+  });
 
-  // Enviar mensaje
   socket.on('send_message', ({ pin, autor, message }) => {
     console.log(`💬 [${pin}] ${autor} desde ${clientIp}: ${message}`);
     io.to(pin).emit('receive_message', { autor, message });
   });
 
-  // Eliminar sala (solo anfitrión)
   socket.on('delete_room', ({ pin }, cb) => {
-    console.log(`🗑️ delete_room solicitado por ip=${clientIp} en pin=${pin}`);
+    console.log(`🗑️ delete_room: ip=${clientIp}, pin=${pin}`);
     if (!isHost) {
-      console.log(`❌ delete_room no autorizado ip=${clientIp}`);
       return cb({ success: false, message: 'No autorizado' });
     }
     const ok = deleteRoom(pin, deviceId);
     if (!ok) {
-      console.log(`❌ delete_room falló: sala no existe o no eres propietario pin=${pin}`);
       return cb({ success: false, message: 'No existe o no eres propietario' });
     }
-    console.log(`✅ Sala eliminada: pin=${pin} por hostIp=${clientIp}`);
     io.to(pin).emit('room_deleted', { pin });
+    console.log(`✅ Sala eliminada: pin=${pin}`);
     cb({ success: true });
   });
 
-  // Al desconectar
   socket.on('disconnect', () => {
-    const { pin, deviceId: did, nickname } = socket.data || {};
-    console.log(`🔌 Desconexión: nickname=${nickname}, ip=${clientIp}`);
+    const { pin, deviceId: did, ip } = socket.data || {};
+    console.log(`🔌 Desconexión: ip=${clientIp}`);
     if (pin) {
       leaveRoom(pin, socket.id, did);
       const room = getRoomByPin(pin);

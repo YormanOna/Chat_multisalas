@@ -1,5 +1,3 @@
-// controllers/roomManager.js
-
 const rooms = {};
 
 function generatePin() {
@@ -10,17 +8,13 @@ function generatePin() {
   return pin;
 }
 
-/**
- * Ahora createRoom sólo guarda ownerDeviceId y el límite,
- * pero NO añade usuarios. 
- */
 function createRoom(nickname, limit, socketId, deviceId) {
   const pin = generatePin();
   rooms[pin] = {
     pin,
     limit,
     ownerDeviceId: deviceId,
-    users: []           // <-- empieza vacía
+    users: []           // guardaremos { nickname, socketId, deviceId, ip }
   };
   return rooms[pin];
 }
@@ -29,8 +23,8 @@ function getRoomByPin(pin) {
   return rooms[pin];
 }
 
-function joinRoom(pin, nickname, socketId, deviceId) {
-  rooms[pin].users.push({ nickname, socketId, deviceId });
+function joinRoom(pin, nickname, socketId, deviceId, ip) {
+  rooms[pin].users.push({ nickname, socketId, deviceId, ip });
 }
 
 function leaveRoom(pin, socketId, deviceId) {
@@ -66,6 +60,12 @@ function isDeviceConnected(deviceId) {
   );
 }
 
+function isIpConnectedInRoom(pin, ip) {
+  const room = rooms[pin];
+  if (!room) return false;
+  return room.users.some(u => u.ip === ip);
+}
+
 function getActiveRooms() {
   return Object.values(rooms).map(({ pin, users, limit }) => ({
     pin,
@@ -82,5 +82,6 @@ module.exports = {
   deleteRoom,
   removeEmptyRooms,
   isDeviceConnected,
+  isIpConnectedInRoom,
   getActiveRooms,
 };

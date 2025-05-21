@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { InputNumber } from 'primereact/inputnumber';
-import { Tooltip } from 'primereact/tooltip';
 import { ProgressBar } from 'primereact/progressbar';
 import { Badge } from 'primereact/badge';
 import { Toast } from 'primereact/toast';
