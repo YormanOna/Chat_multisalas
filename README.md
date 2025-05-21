@@ -74,7 +74,8 @@ localStorage.getItem('chat_device_id') || localStorage.setItem('chat_device_id',
 #### 🔹 **Frontend (`client/`)**  
 Crea un archivo `client/.env` con:  
 ```dotenv  
-REACT_APP_SERVER_URL=http://<TU_IP_LOCAL>:3001  
+REACT_APP_SERVER_URL=http://<TU_IP_LOCAL>:3001
+HOST_DEVICE_ID=<UUID_DEL_ANFITRIÓN>
 ```  
 - Usa la misma IP local que en el backend.  
 
