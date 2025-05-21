@@ -32,8 +32,21 @@ Descarga el proyecto y entra al directorio:
 git clone https://github.com/YormanOna/Chat_multisalas.git  
 cd Chat_multisalas  
 ```  
+### 2. **Instalar Dependencias**  
+Abre dos terminales: una para el backend y otra para el frontend.  
 
-### 2. **Configurar Variables de Entorno**  
+#### 🔹 **Backend**  
+```bash  
+cd server  
+npm install  
+```  
+
+#### 🔹 **Frontend**  
+```bash  
+cd client  
+npm install  
+```  
+### 3. **Configurar Variables de Entorno**  
 Necesitarás configurar archivos `.env` para el backend y el frontend.  
 
 #### 🔹 **Backend (`server/`)**  
@@ -64,21 +77,6 @@ Crea un archivo `client/.env` con:
 REACT_APP_SERVER_URL=http://<TU_IP_LOCAL>:3001  
 ```  
 - Usa la misma IP local que en el backend.  
-
-### 3. **Instalar Dependencias**  
-Abre dos terminales: una para el backend y otra para el frontend.  
-
-#### 🔹 **Backend**  
-```bash  
-cd server  
-npm install  
-```  
-
-#### 🔹 **Frontend**  
-```bash  
-cd client  
-npm install  
-```  
 
 ### 4. **Ejecutar la Aplicación**  
 Inicia ambos servidores para que el chat funcione.  
