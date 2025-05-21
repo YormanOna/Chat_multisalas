@@ -1,0 +1,33 @@
+node_modules/
+.env
+dist/
+*.log
+
+# dependencias
+node_modules/
+
+# producción
+/build
+
+# entorno
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# sistema operativo
+.DS_Store
+
+# editor
+.vscode/
+.idea/
+*.swp
+
+# testing
+coverage/
