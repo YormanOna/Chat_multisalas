@@ -80,7 +80,7 @@ Inicia ambos servidores para que el chat funcione.
 #### 🔹 **Backend**  
 ```bash  
 cd server  
-npm start  
+nodemon server.js  
 ```  
 Escuchará en `http://localhost:3001` (o el puerto definido).  
 
@@ -88,7 +88,7 @@ Escuchará en `http://localhost:3001` (o el puerto definido).
 En otra terminal:  
 ```bash  
 cd client  
-npm run dev  
+npm start  
 ```  
 Se ejecutará en `http://localhost:3000` (o el puerto asignado por Vite).  
 
